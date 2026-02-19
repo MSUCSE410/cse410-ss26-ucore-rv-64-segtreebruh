@@ -54,6 +54,7 @@ int run_all_app()
 		*/
 		p->time = 0;
 		memset(p->syscall_times, 0, sizeof(p->syscall_times));
+		
 	}
 	return 0;
 }
