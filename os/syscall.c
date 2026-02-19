@@ -41,7 +41,10 @@ uint64 sys_gettimeofday(TimeVal *val, int _tz)
 */
 int sys_task_info(TaskInfo* ti) {
 	ti->status = Running;
-	ti->time = get_cycle() * 1000 / CPU_FREQ;
+
+	// current time - start time 
+	// aka Time.deltaTime
+	ti->time = get_cycle() * 1000 / CPU_FREQ - curr_proc()->time;
 	memmove(ti->syscall_times, curr_proc()->syscall_times, sizeof(ti->syscall_times));
 	return 0;
 }
