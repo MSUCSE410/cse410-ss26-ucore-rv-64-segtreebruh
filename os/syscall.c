@@ -34,15 +34,14 @@ uint64 sys_sched_yield()
 
 uint64 sys_gettimeofday(TimeVal *val, int _tz) // TODO: implement sys_gettimeofday in pagetable. (VA to PA)
 {
-	// YOUR CODE
-	val->sec = 0;
-	val->usec = 0;
+	struct proc *p = curr_proc();
+	TimeVal *uval = (TimeVal *)useraddr(p->pagetable, (uint64)val);
+	if (uval == 0)
+		return -1;
 
-	/* The code in `ch3` will leads to memory bugs*/
-
-	// uint64 cycle = get_cycle();
-	// val->sec = cycle / CPU_FREQ;
-	// val->usec = (cycle % CPU_FREQ) * 1000000 / CPU_FREQ;
+	uint64 cycle = get_cycle();
+	uval->sec = cycle / CPU_FREQ;
+	uval->usec = (cycle % CPU_FREQ) * 1000000 / CPU_FREQ;
 	return 0;
 }
 
@@ -53,9 +52,14 @@ uint64 sys_gettimeofday(TimeVal *val, int _tz) // TODO: implement sys_gettimeofd
 * LAB1: you may need to define sys_task_info here
 */
 int sys_task_info(TaskInfo* ti) {
-	ti->status = Running;
-	ti->time = get_cycle() * 1000 / CPU_FREQ - curr_proc()->time;
-	memmove(ti->syscall_times, curr_proc()->syscall_times, sizeof(ti->syscall_times));
+	struct proc *p = curr_proc();
+	TaskInfo *uti = (TaskInfo *)useraddr(p->pagetable, (uint64)ti);
+	if (uti == 0)
+		return -1;
+
+	uti->status = Running;
+	uti->time = get_cycle() * 1000 / CPU_FREQ - p->time;
+	memmove(uti->syscall_times, p->syscall_times, sizeof(uti->syscall_times));
 	return 0;
 }
 
