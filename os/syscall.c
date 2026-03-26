@@ -63,6 +63,63 @@ int sys_task_info(TaskInfo* ti) {
 	return 0;
 }
 
+
+uint64 sys_mmap(uint64 start, uint64 len, int port, int flag, int fd)
+{
+	if (len == 0) return 0;
+
+	if ((port & ~0x7) != 0) return -1;
+	if ((port & 0x7) == 0) return -1;
+	if (start != PGROUNDDOWN(start)) return -1;
+
+	len = PGROUNDUP(len);
+
+	int pte_flag = PTE_U | PTE_V;
+	if (port & 0x1) pte_flag |= PTE_R;
+	if (port & 0x2) pte_flag |= PTE_W;
+	if (port & 0x4) pte_flag |= PTE_X;
+
+	struct proc *p = curr_proc();
+	uint64 npages = len / PGSIZE;
+
+	for (uint64 i = 0; i < npages; i++) {
+		uint64 va = start + i * PGSIZE;
+		if (walkaddr(p->pagetable, va) != 0)
+			return -1;
+	}
+
+	for (uint64 i = 0; i < npages; i++) {
+		uint64 va = start + i * PGSIZE;
+		void *pa = kalloc();
+		if (pa == 0) return -1;
+		if (walkaddr(p->pagetable, va) != 0) return -1;
+		if (mappages(p->pagetable, va, PGSIZE, (uint64)pa, pte_flag) < 0) return -1;
+	}
+
+	return 0;
+}
+
+uint64 sys_munmap(uint64 start, uint64 len)
+{
+	if (len == 0) return 0;
+	if (start != PGROUNDDOWN(start)) return -1;
+
+	len = PGROUNDUP(len);
+
+	struct proc *p = curr_proc();
+	uint64 npages = len / PGSIZE;
+
+	for (int i = 0; i < npages; i++) {
+		uint64 va = start + i * PGSIZE;
+		uint64 vpa = useraddr(p->pagetable, va);
+
+		if (vpa == 0) return -1;
+		uvmunmap(p->pagetable, va, 1, 1);
+	}
+
+	return 0;
+}
+
 extern char trap_page[];
 
 void syscall()
@@ -95,6 +152,13 @@ void syscall()
 	*/
 	case SYS_task_info:
 		ret = sys_task_info((TaskInfo *)args[0]);
+		break;
+	case SYS_mmap:
+		ret = sys_mmap((uint64)args[0], (uint64)args[1],
+			       (int)args[2], (int)args[3], (int)args[4]);
+		break;
+	case SYS_munmap:
+		ret = sys_munmap((uint64)args[0], (uint64)args[1]);
 		break;
 	default:
 		ret = -1;
