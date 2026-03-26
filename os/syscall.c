@@ -93,7 +93,7 @@ uint64 sys_mmap(uint64 start, uint64 len, int port, int flag, int fd)
 		void *pa = kalloc();
 		if (pa == 0) return -1;
 		if (walkaddr(p->pagetable, va) != 0) return -1;
-		if (mappages(p->pagetable, va, PGSIZE, (uint64)pa, pte_flag) < 0) return -1;
+		if (mappages(p->pagetable, va, PGSIZE, (uint64)pa, pte_flag) < 0) return -1; 
 	}
 
 	return 0;
