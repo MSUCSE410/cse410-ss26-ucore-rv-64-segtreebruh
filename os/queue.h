@@ -11,8 +11,11 @@ struct queue {
 	int empty;
 };
 
+struct proc;
+
 void init_queue(struct queue *);
 void push_queue(struct queue *, int);
 int pop_queue(struct queue *);
+int pop_priority_queue(struct queue *, struct proc *);
 
 #endif // QUEUE_H

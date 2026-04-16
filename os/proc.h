@@ -9,6 +9,8 @@
 #define FD_BUFFER_SIZE (16)
 #define MAX_SYSCALL_NUM 500
 
+typedef unsigned long long Stride_t;
+
 struct file;
 
 // Saved registers for kernel context switches.
@@ -48,6 +50,8 @@ struct proc {
 	struct file *files[FD_BUFFER_SIZE];
 	unsigned int syscall_times[MAX_SYSCALL_NUM];
 	int time;
+	uint64 priority;
+	Stride_t stride;
 };
 
 typedef enum {
@@ -72,6 +76,8 @@ void sched();
 void yield();
 int fork();
 int exec(char *);
+int spawn(char *);
+int set_priority(long long);
 int wait(int, int *);
 void add_task(struct proc *);
 struct proc *pop_task();

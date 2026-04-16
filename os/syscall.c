@@ -164,13 +164,15 @@ uint64 sys_munmap(uint64 start, uint64 len)
 
 uint64 sys_spawn(uint64 va)
 {
-	// TODO: your job is to complete the sys call
-	return -1;
+	struct proc *p = curr_proc();
+	char name[MAX_STR_LEN];
+	if (copyinstr(p->pagetable, name, va, MAX_STR_LEN) < 0)
+		return -1;
+	return spawn(name);
 }
 
 uint64 sys_set_priority(long long prio){
-    // TODO: your job is to complete the sys call
-    return -1;
+	return set_priority(prio);
 }
 
 
@@ -229,6 +231,9 @@ void syscall()
 		break;
 	case SYS_munmap:
 		ret = sys_munmap((uint64)args[0], (uint64)args[1]);
+		break;
+	case SYS_setpriority:
+		ret = sys_set_priority((long long)args[0]);
 		break;
 	default:
 		ret = -1;
