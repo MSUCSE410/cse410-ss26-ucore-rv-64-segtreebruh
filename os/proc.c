@@ -89,7 +89,25 @@ found:
 	memset((void *)p->trapframe, 0, TRAP_PAGE_SIZE);
 	p->context.ra = (uint64)usertrapret;
 	p->context.sp = p->kstack + KSTACK_SIZE;
+	p->priority = 16;
+	p->stride = 0;
 	return p;
+}
+
+struct proc* fetch_task_prio() {
+	if (task_queue.empty) return NULL;
+
+	int id = task_queue.front;
+
+	for (int i = task_queue.front; i != task_queue.tail; i = (i + 1) % NPROC) {
+		if (pool[task_queue.data[id]].stride > pool[task_queue.data[i]].stride) id = i;
+	}
+
+	int val = task_queue.data[id];
+	task_queue.data[id] = task_queue.data[task_queue.front];
+	task_queue.data[task_queue.front] = val;
+
+	return fetch_task();
 }
 
 // Scheduler never returns.  It loops, doing:
@@ -114,13 +132,14 @@ void scheduler()
 		if(has_proc == 0) {
 			panic("all app are over!\n");
 		}*/
-		p = fetch_task();
+		p = fetch_task_prio();
 		if (p == NULL) {
 			panic("all app are over!\n");
 		}
 		tracef("swtich to proc %d", p - pool);
 		p->state = RUNNING;
 		current_proc = p;
+		p->stride += BIG_STRIDE / p->stride;
 		swtch(&idle.context, &p->context);
 	}
 }
@@ -165,6 +184,29 @@ void freeproc(struct proc *p)
 	p->state = UNUSED;
 }
 
+// project3
+int spawn(char *name)
+{
+	struct proc *p = curr_proc();
+	struct proc *np = allocproc();
+	if (np == 0) return -1;
+
+	int id = get_id_by_name(name);
+	if (id < 0) {
+		freeproc(np);
+		return -1;
+	}
+
+	np->parent = p;
+	if (loader(id, np) < 0) {
+		freeproc(np);
+		return -1;
+	}
+	add_task(np);
+	return np->pid;
+}
+
+
 int fork()
 {
 	struct proc *np;
@@ -184,6 +226,8 @@ int fork()
 	np->trapframe->a0 = 0;
 	np->parent = p;
 	np->state = RUNNABLE;
+	np->priority = p->priority;
+	np->stride = p->stride;
 	add_task(np);
 	return np->pid;
 }
