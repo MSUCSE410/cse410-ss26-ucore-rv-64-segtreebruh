@@ -47,7 +47,7 @@ int allocpid()
 
 struct proc *fetch_task()
 {
-	int index = pop_priority_queue(&task_queue, pool);
+	int index = pop_queue(&task_queue);
 	if (index < 0) {
 		debugf("No task to fetch\n");
 		return NULL;
@@ -83,8 +83,6 @@ found:
 	p->max_page = 0;
 	p->parent = NULL;
 	p->exit_code = 0;
-	p->priority = 16;
-	p->stride = 0;
 	p->pagetable = uvmcreate((uint64)p->trapframe);
 	memset(&p->context, 0, sizeof(p->context));
 	memset((void *)p->kstack, 0, KSTACK_SIZE);
@@ -185,19 +183,9 @@ int fork()
 	// Cause fork to return 0 in the child.
 	np->trapframe->a0 = 0;
 	np->parent = p;
-	np->priority = p->priority;
-	np->stride = p->stride;
 	np->state = RUNNABLE;
 	add_task(np);
 	return np->pid;
-}
-
-int set_priority(long long prio)
-{
-	if (prio <= 1)
-		return -1;
-	curr_proc()->priority = prio;
-	return prio;
 }
 
 int exec(char *name)
@@ -210,28 +198,6 @@ int exec(char *name)
 	p->max_page = 0;
 	loader(id, p);
 	return 0;
-}
-
-int spawn(char *name)
-{
-	struct proc *p = curr_proc();
-	struct proc *np = allocproc();
-	if (np == 0)
-		return -1;
-
-	int id = get_id_by_name(name);
-	if (id < 0) {
-		freeproc(np);
-		return -1;
-	}
-
-	np->parent = p;
-	if (loader(id, np) < 0) {
-		freeproc(np);
-		return -1;
-	}
-	add_task(np);
-	return np->pid;
 }
 
 int wait(int pid, int *code)
