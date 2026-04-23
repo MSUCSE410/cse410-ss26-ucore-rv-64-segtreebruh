@@ -45,6 +45,8 @@ struct superblock {
 // On-disk inode structure
 struct dinode {
 	short type; // File type
+
+	// padding for bit alignment
 	short pad;
 	uint nlink;
 	uint size; // Size of file (bytes)

@@ -128,6 +128,8 @@ struct inode *ialloc(uint dev, short type)
 // Copy a modified in-memory inode to disk.
 // Must be called after every change to an ip->xxx field
 // that lives on disk.
+
+// Update inode changes from memory to disk
 void iupdate(struct inode *ip)
 {
 	struct buf *bp;
@@ -432,16 +434,16 @@ int dirlink(struct inode *dp, char *name, uint inum)
 }
 
 // LAB4: You may want to add dirunlink here
-int dirunlink(struct inode* dp, char* name) {
-	uint off;
+int dirunlink(struct inode* dir_ip, char* name) {
+	uint offset;
 	struct dirent de;
-	struct inode* ip;
-	if ((ip = dirlookup(dp, name, &off)) == 0) {
-		return -1;
-	}
+	struct inode* ip = dirlookup(dir_ip, name, &offset);
+	if (ip == 0) return -1;
 
 	memset(&de, 0, sizeof(de));
-	if (writei(dp, 0, (uint64)&de, off, sizeof(de)) != sizeof(de)) {
+
+	// write an empty dirent to the directory
+	if (writei(dir_ip, 0, (uint64)&de, offset, sizeof(de)) != sizeof(de)) {
 		panic("dirunlink");
 	}
 

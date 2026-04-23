@@ -44,6 +44,8 @@ struct superblock {
 // On-disk inode structure
 struct dinode {
 	short type; // File type
+
+	// padding for bit alignment
 	short pad;
 	uint nlink;
 	// LAB4: you can reduce size of pad array and add link count below,

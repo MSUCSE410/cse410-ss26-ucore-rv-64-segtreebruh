@@ -210,6 +210,7 @@ void freeproc(struct proc *p)
 // project3
 int spawn(char *name)
 {
+	// look for file object in program path
 	struct inode *ip = namei(name);
 	if (ip == 0) return -1;
 	
@@ -217,6 +218,7 @@ int spawn(char *name)
 	struct proc *np = allocproc();
 	if (np == 0) return -1;
 
+	// load program binary to child proc
 	bin_loader(ip, np);
 	np->parent = p;
 	add_task(np);
