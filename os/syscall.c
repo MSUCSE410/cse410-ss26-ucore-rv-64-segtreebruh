@@ -261,7 +261,7 @@ int sys_fstat(int fd,uint64 stat){
 
 int sys_linkat(int olddirfd, uint64 oldpath, int newdirfd, uint64 newpath, uint64 flags){
 	//TODO: your job is to complete the syscall
-	return -1;
+	return linkat(oldpath, newpath);
 }
 
 int sys_unlinkat(int dirfd, uint64 name, uint64 flags){
