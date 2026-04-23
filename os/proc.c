@@ -210,21 +210,15 @@ void freeproc(struct proc *p)
 // project3
 int spawn(char *name)
 {
+	struct inode *ip = namei(name);
+	if (ip == 0) return -1;
+	
 	struct proc *p = curr_proc();
 	struct proc *np = allocproc();
 	if (np == 0) return -1;
 
-	int id = get_id_by_name(name);
-	if (id < 0) {
-		freeproc(np);
-		return -1;
-	}
-
+	bin_loader(ip, np);
 	np->parent = p;
-	if (loader(id, np) < 0) {
-		freeproc(np);
-		return -1;
-	}
 	add_task(np);
 	return np->pid;
 }
